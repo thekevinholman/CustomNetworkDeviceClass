@@ -1,0 +1,150 @@
+<ManagementPack ContentReadable="true" SchemaVersion="2.0" OriginalSchemaVersion="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <Manifest>
+    <Identity>
+      <ID>Example.Network</ID>
+      <Version>1.0.0.2</Version>
+    </Identity>
+    <Name>Example Network</Name>
+    <References>
+      <Reference Alias="Network">
+        <ID>System.NetworkManagement.Library</ID>
+        <Version>7.1.10226.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Windows">
+        <ID>Microsoft.Windows.Library</ID>
+        <Version>6.0.4837.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System">
+        <ID>System.Library</ID>
+        <Version>6.0.4837.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="SC">
+        <ID>Microsoft.SystemCenter.Library</ID>
+        <Version>6.0.4837.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Health">
+        <ID>System.Health.Library</ID>
+        <Version>6.0.4837.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+    </References>
+  </Manifest>
+  <TypeDefinitions>
+    <EntityTypes>
+      <ClassTypes>
+        <ClassType ID="Example.Network.Device" Accessibility="Public" Abstract="false" Base="Network!System.NetworkManagement.Node" Hosted="false" Singleton="false" Extension="false" />
+      </ClassTypes>
+    </EntityTypes>
+    <ModuleTypes>
+      <DataSourceModuleType ID="Example.Network.Device.Discovery.DS" Accessibility="Internal" Batching="false">
+        <Configuration>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" />
+          <xsd:element minOccurs="0" name="SyncTime" type="xsd:string" />
+          <xsd:element name="OID" type="xsd:string" />
+          <xsd:element name="DisplayName" type="xsd:string" />
+          <xsd:element name="Model" type="xsd:string" />
+		  <xsd:element name="Vendor" type="xsd:string" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" ParameterType="int" Selector="$Config/IntervalSeconds$"/>
+          <OverrideableParameter ID="SyncTime" ParameterType="string" Selector="$Config/SyncTime$"/>
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+		<Composite>
+            <MemberModules>
+              <DataSource ID="Scheduler" TypeID="System!System.Discovery.Scheduler">
+                <Scheduler>
+                  <SimpleReccuringSchedule>
+                    <Interval>$Config/IntervalSeconds$</Interval>
+                    <SyncTime>$Config/SyncTime$</SyncTime>
+                  </SimpleReccuringSchedule>
+                  <ExcludeDates />
+                </Scheduler>
+              </DataSource>
+              <ConditionDetection ID="MapToDiscovery" TypeID="System!System.Discovery.FilteredClassSnapshotDataMapper">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <Value>$Target/Property[Type="Network!System.NetworkManagement.Node"]/SystemObjectID$</Value>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/OID$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>                
+                <ClassId>$MPElement[Name='Example.Network.Device']$</ClassId>
+                <InstanceSettings>
+                  <Settings>
+                    <Setting>
+                      <Name>$MPElement[Name='System!System.Entity']/DisplayName$</Name>
+                      <Value>$Config/DisplayName$</Value>
+                    </Setting>
+                    <Setting>
+                      <Name>$MPElement[Name='Network!System.NetworkManagement.Node']/DeviceKey$</Name>
+                      <Value>$Target/Property[Type="Network!System.NetworkManagement.Node"]/DeviceKey$</Value>
+                    </Setting>
+                    <Setting>
+                      <Name>$MPElement[Name='Network!System.NetworkManagement.Node']/Model$</Name>
+                      <Value>$Config/Model$</Value>
+                    </Setting>
+                    <Setting>
+                      <Name>$MPElement[Name='Network!System.NetworkManagement.Node']/Vendor$</Name>
+                      <Value>$Config/Vendor$</Value>
+                    </Setting>
+                  </Settings>
+                </InstanceSettings>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="MapToDiscovery">
+                <Node ID="Scheduler" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.Discovery.Data</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+  </TypeDefinitions>
+  <Monitoring>
+   <Discoveries>
+    <Discovery ID="Example.Network.Device.Discovery" Enabled="true" ConfirmDelivery="false" Remotable="true" Priority="Normal" Target="Network!System.NetworkManagement.Node">
+     <Category>Discovery</Category>
+     <DiscoveryTypes>
+      <DiscoveryClass TypeID="Example.Network.Device" />
+     </DiscoveryTypes>
+     <DataSource ID="DS" TypeID="Example.Network.Device.Discovery.DS">
+      <IntervalSeconds>14400</IntervalSeconds>
+      <SyncTime />
+	  <OID>.1.3.6.1.4.1.8072.3.2.10</OID>
+      <DisplayName>$Target/Property[Type="Network!System.NetworkManagement.Node"]/sysName$</DisplayName>
+      <Model>$Target/Property[Type="Network!System.NetworkManagement.Node"]/Model$</Model>
+	  <Vendor>$Target/Property[Type="Network!System.NetworkManagement.Node"]/Vendor$</Vendor>
+     </DataSource>
+    </Discovery>
+   </Discoveries>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="Example.Network">
+          <Name>Example Network Device MP</Name>
+          <Description>This management pack will show an example of discovering a network device class instance based on system OID</Description>
+        </DisplayString>
+        <DisplayString ElementID="Example.Network.Device">
+          <Name>Example Network Device</Name>
+          <Description>This is my custom network device class</Description>
+        </DisplayString>
+        <DisplayString ElementID="Example.Network.Device.Discovery">
+          <Name>Example Network Device Discovery</Name>
+          <Description>Find all network devices that match a specific system OID</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>  
+</ManagementPack>  
